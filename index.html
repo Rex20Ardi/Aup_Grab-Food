@@ -329,7 +329,7 @@
       
       <div id="riderStatus" class="loading">
         <span class="status-indicator status-waiting"></span>
-        🔍 Looking for an available rider...
+         Looking for an available rider...
       </div>
       
       <div id="riderInfo" style="display: none;"></div>
@@ -345,7 +345,7 @@
       <div id="completedMessage" style="display: none;"></div>
       
       <button id="refreshBtn" class="refresh-btn" onclick="checkRiderStatus()">
-        🔄 Check Rider Status
+         Check Rider Status
       </button>
       
       <div style="margin-top: 15px; font-size: 12px; color: #666;">
@@ -355,14 +355,14 @@
     </div>
 
     <div class="my-orders-section">
-      <h3>📋 My Orders</h3>
+      <h3> My Orders</h3>
       <div id="myOrdersList">
         <div style="text-align: center; color: #666; font-style: italic;">
           No orders yet. Place your first order above!
         </div>
       </div>
       <button onclick="loadMyOrders()" style="width: auto; padding: 8px 16px; font-size: 14px; margin-top: 10px;">
-        🔄 Refresh My Orders
+         Refresh My Orders
       </button>
     </div>
   </div>
@@ -397,7 +397,7 @@
       
       // Add reset button to status section
       const resetBtn = document.createElement('button');
-      resetBtn.textContent = '📝 Place New Order';
+      resetBtn.textContent = ' Place New Order';
       resetBtn.onclick = resetForm;
       resetBtn.style.background = 'linear-gradient(135deg, #6c757d, #495057)';
       resetBtn.style.marginTop = '15px';
@@ -460,10 +460,10 @@
         
         const result = await response.json();
         
-        responseMsg.innerHTML = '<div class="success-message">✅ Booking submitted successfully!</div>';
+        responseMsg.innerHTML = '<div class="success-message"> Booking submitted successfully!</div>';
         
         // Display the order ID prominently
-        orderIdDisplay.innerHTML = `<div class="order-id">📋 Order ID: ${currentOrderId}</div>`;
+        orderIdDisplay.innerHTML = `<div class="order-id"> Order ID: ${currentOrderId}</div>`;
         
         statusSection.style.display = 'block';
         form.style.display = 'none';
@@ -593,10 +593,10 @@
               <span class="order-status ${getStatusClass(order)}">${getStatusText(order)}</span>
             </div>
             <div class="order-details">
-              <strong>📍 From:</strong> ${order.Pickup} → <strong>📍 To:</strong> ${order.Dropoff}<br>
-              <strong>🍽️ Item:</strong> ${order.Item}<br>
-              ${order["Rider Name"] ? `<strong>🚴‍♂️ Rider:</strong> ${order["Rider Name"]} (${order["Rider Phone"] || 'No phone'})<br>` : ''}
-              <strong>💳 Payment:</strong> ${order["Payment Status"]}
+              <strong>From:</strong> ${order.Pickup} → <strong>📍 To:</strong> ${order.Dropoff}<br>
+              <strong>Item:</strong> ${order.Item}<br>
+              ${order["Rider Name"] ? `<strong>Rider:</strong> ${order["Rider Name"]} (${order["Rider Phone"] || 'No phone'})<br>` : ''}
+              <strong>Payment:</strong> ${order["Payment Status"]}
             </div>
             ${getOrderActions(order)}
           `;
