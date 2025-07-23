@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Food Booking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      padding: 20px; 
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container { 
+      max-width: 500px; 
+      margin: auto; 
+      background: white; 
+      padding: 30px; 
+      border-radius: 15px; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    input, textarea, select, button { 
+      width: 100%; 
+      margin-bottom: 15px; 
+      padding: 12px; 
+      border-radius: 8px; 
+      border: 2px solid #e1e1e1; 
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button { 
+      background: linear-gradient(135deg, #28a745, #20c997); 
+      color: white; 
+      font-weight: bold; 
+      border: none; 
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .user-session {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      border-left: 4px solid #6c757d;
+    }
+    .user-id {
+      font-family: monospace;
+      font-weight: bold;
+      color: #495057;
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-left: 5px;
+    }
+    .status-section {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #28a745;
+    }
+    .rider-info {
+      background: linear-gradient(135deg, #17a2b8, #138496);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 15px;
+      text-align: center;
+      animation: slideIn 0.5s ease-out;
+    }
+    .rider-info h3 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+    }
+    .rider-details {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #c3e6cb;
+      margin-bottom: 15px;
+    }
+    .refresh-btn {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    .confirm-receipt-btn {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      margin-top: 15px;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .order-id {
+      font-weight: bold;
+      color: #667eea;
+      font-size: 18px;
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid #007bff;
+      text-align: center;
+      margin: 15px 0;
+    }
+    .notification-alert {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 15px;
+      text-align: center;
+      animation: pulse 2s infinite;
+      border: 3px solid #fff;
+      box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+    }
+    .notification-settings {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .notification-settings label {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+      cursor: pointer;
+    }
+    .notification-settings input[type="checkbox"] {
+      width: auto;
+      margin-right: 10px;
+      margin-bottom: 0;
+    }
+    .completed-message {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 15px;
+      text-align: center;
+      animation: slideIn 0.5s ease-out;
+    }
+    .my-orders-section {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #007bff;
+    }
+    .order-card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-left: 4px solid #28a745;
+    }
+    .order-card.pending {
+      border-left-color: #ffc107;
+    }
+    .order-card.assigned {
+      border-left-color: #007bff;
+    }
+    .order-card.completed {
+      border-left-color: #28a745;
+      opacity: 0.8;
+    }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .order-id-small {
+      font-family: monospace;
+      font-size: 12px;
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .order-status {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .status-assigned {
+      background: #cce5ff;
+      color: #004085;
+    }
+    .status-completed {
+      background: #d4edda;
+      color: #155724;
+    }
+    .order-details {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .order-actions {
+      text-align: right;
+    }
+    .order-actions button {
+      width: auto;
+      padding: 8px 16px;
+      font-size: 14px;
+      margin: 0;
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: blink 1s infinite;
+    }
+    .status-waiting {
+      background: #ffc107;
+    }
+    .status-assigned {
+      background: #28a745;
+      animation: none;
+    }
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🍽️ Book a Food Pickup</h2>
+    
+    <div class="user-session">
+      <strong>👤 Your Session:</strong>
+      <span class="user-id" id="userSessionId"></span>
+      <div style="font-size: 12px; color: #666; margin-top: 5px;">
+        This ID helps track your orders separately from other users
+      </div>
+    </div>
+    
+    <form id="bookingForm">
+      <input type="text" id="customer" placeholder="Your Name" required />
+      <input type="tel" id="phone" placeholder="Phone Number" required />
+      <input type="text" id="pickup" placeholder="Where to Pick Up" required />
+      <input type="text" id="item" placeholder="What to Pick Up" required />
+      <input type="text" id="dropoff" placeholder="Where to Drop Off" required />
+      <select id="paymentStatus" required>
+        <option value="">Payment Status</option>
+        <option value="Paid">Paid</option>
+        <option value="Not Yet Paid">Not Yet Paid</option>
+      </select>
+      <textarea id="notes" placeholder="Notes (optional)" rows="3"></textarea>
+      
+      <div class="notification-settings">
+        <strong>📢 Notification Preferences:</strong>
+        <label>
+          <input type="checkbox" id="enableSound" checked>
+          🔊 Play sound when rider is assigned
+        </label>
+        <label>
+          <input type="checkbox" id="enableBrowserNotification" checked>
+          🔔 Show browser notification
+        </label>
+      </div>
+      
+      <button type="submit" id="submitBtn">Submit Booking</button>
+    </form>
+
+    <div id="statusSection" class="status-section" style="display: none;">
+      <div id="responseMsg"></div>
+      <div id="orderIdDisplay"></div>
+      
+      <div id="riderStatus" class="loading">
+        <span class="status-indicator status-waiting"></span>
+        🔍 Looking for an available rider...
+      </div>
+      
+      <div id="riderInfo" style="display: none;"></div>
+      
+      <div id="notificationAlert" style="display: none;"></div>
+      
+      <div id="orderActions" style="display: none;">
+        <button id="confirmReceiptBtn" class="confirm-receipt-btn" onclick="confirmReceipt()">
+          ✅ Confirm Order Received
+        </button>
+      </div>
+      
+      <div id="completedMessage" style="display: none;"></div>
+      
+      <button id="refreshBtn" class="refresh-btn" onclick="checkRiderStatus()">
+        🔄 Check Rider Status
+      </button>
+      
+      <div style="margin-top: 15px; font-size: 12px; color: #666;">
+        <span class="status-indicator status-waiting"></span>
+        Checking for rider updates every 5 seconds...
+      </div>
+    </div>
+
+    <div class="my-orders-section">
+      <h3>📋 My Orders</h3>
+      <div id="myOrdersList">
+        <div style="text-align: center; color: #666; font-style: italic;">
+          No orders yet. Place your first order above!
+        </div>
+      </div>
+      <button onclick="loadMyOrders()" style="width: auto; padding: 8px 16px; font-size: 14px; margin-top: 10px;">
+        🔄 Refresh My Orders
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzQpc4ewpTsQv4aRcTk3-30nDnQvzp4Q3xXqHbmgzsBXjFjoXE6GFtij4rpn-bIE4sU1Q/exec';
+    const form = document.getElementById('bookingForm');
+    const responseMsg = document.getElementById('responseMsg');
+    const riderInfo = document.getElementById('riderInfo');
+    const riderStatus = document.getElementById('riderStatus');
+    const statusSection = document.getElementById('statusSection');
+    const submitBtn = document.getElementById('submitBtn');
+    const orderIdDisplay = document.getElementById('orderIdDisplay');
+    const notificationAlert = document.getElementById('notificationAlert');
+    const orderActions = document.getElementById('orderActions');
+    const completedMessage = document.getElementById('completedMessage');
+    
+    let currentOrderId = null;
+    let checkInterval = null;
+    let riderAssigned = false;
+    let orderCompleted = false;
+    let userSessionId = null;
+
+    // Initialize user session
+    window.onload = function() {
+      initializeUserSession();
+      loadMyOrders();
+      
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+      
+      // Add reset button to status section
+      const resetBtn = document.createElement('button');
+      resetBtn.textContent = '📝 Place New Order';
+      resetBtn.onclick = resetForm;
+      resetBtn.style.background = 'linear-gradient(135deg, #6c757d, #495057)';
+      resetBtn.style.marginTop = '15px';
+      statusSection.appendChild(resetBtn);
+    };
+
+    function initializeUserSession() {
+      userSessionId = localStorage.getItem('userSessionId');
+      if (!userSessionId) {
+        userSessionId = generateUserSessionId();
+        localStorage.setItem('userSessionId', userSessionId);
+      }
+      document.getElementById('userSessionId').textContent = userSessionId;
+    }
+
+    function generateUserSessionId() {
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 10000);
+      return `USER-${timestamp}-${random}`;
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      submitOrder();
+    });
+
+    // Generate unique order ID
+    function generateOrderId() {
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      return `ORD-${timestamp}-${random}`;
+    }
+
+    async function submitOrder() {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      // Generate unique order ID
+      currentOrderId = generateOrderId();
+
+      const data = {
+        action: 'submitOrder',
+        orderId: currentOrderId,
+        userSessionId: userSessionId,
+        customer: document.getElementById('customer').value,
+        phone: document.getElementById('phone').value,
+        pickup: document.getElementById('pickup').value,
+        item: document.getElementById('item').value,
+        dropoff: document.getElementById('dropoff').value,
+        paymentStatus: document.getElementById('paymentStatus').value,
+        notes: document.getElementById('notes').value,
+        timestamp: new Date().toISOString()
+      };
+
+      try {
+        const response = await fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        responseMsg.innerHTML = '<div class="success-message">✅ Booking submitted successfully!</div>';
+        
+        // Display the order ID prominently
+        orderIdDisplay.innerHTML = `<div class="order-id">📋 Order ID: ${currentOrderId}</div>`;
+        
+        statusSection.style.display = 'block';
+        form.style.display = 'none';
+        
+        // Start checking for rider assignment
+        startRiderCheck();
+        
+        // Refresh my orders list
+        loadMyOrders();
+        
+      } catch (error) {
+        responseMsg.innerHTML = '<div style="color: red;">❌ Something went wrong. Please try again.</div>';
+        console.error('Error!', error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Booking';
+      }
+    }
+
+    function startRiderCheck() {
+      // Check immediately
+      checkRiderStatus();
+      
+      // Then check every 5 seconds for faster updates
+      checkInterval = setInterval(checkRiderStatus, 5000);
+    }
+
+    async function checkRiderStatus() {
+      if (!currentOrderId || orderCompleted) return;
+      
+      try {
+        const response = await fetch(scriptURL + '?orderId=' + currentOrderId + '&userSessionId=' + userSessionId);
+        const data = await response.json();
+        
+        // Find the order with our specific order ID
+        const myOrder = data.find(order => order["Order ID"] === currentOrderId);
+        
+        if (myOrder) {
+          if (myOrder["Status"] === "Completed" && !orderCompleted) {
+            // Order has been completed
+            orderCompleted = true;
+            clearInterval(checkInterval);
+            showOrderCompleted();
+            loadMyOrders(); // Refresh orders list
+          } else if (myOrder["Rider Name"] && !riderAssigned) {
+            // Rider has been assigned for the first time!
+            riderAssigned = true;
+            
+            // Show immediate notification alert
+            showRiderAssignedAlert(myOrder);
+            
+            // Play notification sound if enabled
+            if (document.getElementById('enableSound').checked) {
+              playNotificationSound();
+            }
+            
+            // Show browser notification if enabled
+            if (document.getElementById('enableBrowserNotification').checked) {
+              showBrowserNotification(myOrder);
+            }
+            
+            // Update the UI
+            riderStatus.style.display = 'none';
+            riderInfo.style.display = 'block';
+            riderInfo.innerHTML = `
+              <div class="rider-info">
+                <h3>🚴‍♂️ Rider Assigned!</h3>
+                <div class="rider-details">
+                  <strong>Name:</strong> ${myOrder["Rider Name"]}
+                </div>
+                <div class="rider-details">
+                  <strong>Phone:</strong> ${myOrder["Rider Phone"] || 'Not provided'}
+                </div>
+                <div style="margin-top: 15px; font-size: 14px; opacity: 0.9;">
+                  Your rider will contact you shortly for pickup coordination.
+                </div>
+              </div>
+            `;
+            
+            // Show the confirm receipt button
+            orderActions.style.display = 'block';
+            
+            // Hide the refresh button since rider is assigned
+            document.getElementById('refreshBtn').style.display = 'none';
+            
+            // Refresh orders list
+            loadMyOrders();
+            
+          } else if (!myOrder["Rider Name"]) {
+            // Still waiting for rider
+            riderStatus.innerHTML = '<span class="status-indicator status-waiting"></span>⏳ Waiting for rider assignment...';
+            riderInfo.style.display = 'none';
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error checking rider status:', error);
+        riderStatus.innerHTML = '⚠️ Unable to check rider status. Please refresh manually.';
+      }
+    }
+
+    async function loadMyOrders() {
+      try {
+        const response = await fetch(scriptURL + '?userSessionId=' + userSessionId);
+        const orders = await response.json();
+        
+        const myOrdersList = document.getElementById('myOrdersList');
+        
+        if (orders.length === 0) {
+          myOrdersList.innerHTML = `
+            <div style="text-align: center; color: #666; font-style: italic;">
+              No orders yet. Place your first order above!
+            </div>
+          `;
+          return;
+        }
+        
+        myOrdersList.innerHTML = '';
+        
+        orders.forEach(order => {
+          const orderCard = document.createElement('div');
+          orderCard.className = `order-card ${getOrderStatusClass(order)}`;
+          
+          orderCard.innerHTML = `
+            <div class="order-header">
+              <span class="order-id-small">${order["Order ID"]}</span>
+              <span class="order-status ${getStatusClass(order)}">${getStatusText(order)}</span>
+            </div>
+            <div class="order-details">
+              <strong>📍 From:</strong> ${order.Pickup} → <strong>📍 To:</strong> ${order.Dropoff}<br>
+              <strong>🍽️ Item:</strong> ${order.Item}<br>
+              ${order["Rider Name"] ? `<strong>🚴‍♂️ Rider:</strong> ${order["Rider Name"]} (${order["Rider Phone"] || 'No phone'})<br>` : ''}
+              <strong>💳 Payment:</strong> ${order["Payment Status"]}
+            </div>
+            ${getOrderActions(order)}
+          `;
+          
+          myOrdersList.appendChild(orderCard);
+        });
+        
+      } catch (error) {
+        console.error('Error loading my orders:', error);
+        document.getElementById('myOrdersList').innerHTML = `
+          <div style="color: red; text-align: center;">
+            ❌ Error loading orders. Please try again.
+          </div>
+        `;
+      }
+    }
+
+    function getOrderStatusClass(order) {
+      if (order["Status"] === "Completed") return "completed";
+      if (order["Rider Name"]) return "assigned";
+      return "pending";
+    }
+
+    function getStatusClass(order) {
+      if (order["Status"] === "Completed") return "status-completed";
+      if (order["Rider Name"]) return "status-assigned";
+      return "status-pending";
+    }
+
+    function getStatusText(order) {
+      if (order["Status"] === "Completed") return "✅ Completed";
+      if (order["Rider Name"]) return "🚴‍♂️ Assigned";
+      return "⏳ Pending";
+    }
+
+    function getOrderActions(order) {
+      if (order["Status"] === "Completed") {
+        return '<div class="order-actions"><span style="color: #28a745; font-weight: bold;">Order completed!</span></div>';
+      } else if (order["Rider Name"]) {
+        return `
+          <div class="order-actions">
+            <button onclick="confirmOrderReceipt('${order["Order ID"]}')" style="background: linear-gradient(135deg, #28a745, #20c997);">
+              ✅ Confirm Received
+            </button>
+          </div>
+        `;
+      } else {
+        return '<div class="order-actions"><span style="color: #ffc107; font-weight: bold;">Waiting for rider...</span></div>';
+      }
+    }
+
+    async function confirmOrderReceipt(orderId) {
+      if (confirm('Confirm that you have received this order?')) {
+        try {
+          const response = await fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'confirmReceipt',
+              orderId: orderId,
+              userSessionId: userSessionId
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.result === 'success') {
+            loadMyOrders(); // Refresh the orders list
+            if (orderId === currentOrderId) {
+              orderCompleted = true;
+              clearInterval(checkInterval);
+              showOrderCompleted();
+            }
+          } else {
+            alert('Failed to confirm receipt. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error confirming receipt:', error);
+          alert('Network error. Please try again.');
+        }
+      }
+    }
+
+    async function confirmReceipt() {
+      if (!currentOrderId) return;
+      
+      if (confirm('Confirm that you have received your order?')) {
+        try {
+          const response = await fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'confirmReceipt',
+              orderId: currentOrderId,
+              userSessionId: userSessionId
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.result === 'success') {
+            orderCompleted = true;
+            clearInterval(checkInterval);
+            showOrderCompleted();
+            loadMyOrders();
+          } else {
+            alert('Failed to confirm receipt. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error confirming receipt:', error);
+          alert('Network error. Please try again.');
+        }
+      }
+    }
+
+    function showOrderCompleted() {
+      // Hide other elements
+      riderInfo.style.display = 'none';
+      orderActions.style.display = 'none';
+      notificationAlert.style.display = 'none';
+      document.getElementById('refreshBtn').style.display = 'none';
+      
+      // Show completion message
+      completedMessage.style.display = 'block';
+      completedMessage.innerHTML = `
+        <div class="completed-message">
+          <h3>🎉 Order Completed!</h3>
+          <p>Thank you for using our food pickup service!</p>
+          <p>Order ID: <strong>${currentOrderId}</strong></p>
+          <p style="font-size: 14px; margin-top: 10px; opacity: 0.9;">
+            We hope you enjoyed your meal!
+          </p>
+        </div>
+      `;
+    }
+
+    function showRiderAssignedAlert(order) {
+      notificationAlert.style.display = 'block';
+      notificationAlert.className = 'notification-alert';
+      notificationAlert.innerHTML = `
+        <h3>🎉 GREAT NEWS!</h3>
+        <p><strong>${order["Rider Name"]}</strong> has accepted your order!</p>
+        <p>Phone: <strong>${order["Rider Phone"] || 'Will contact you soon'}</strong></p>
+        <p style="font-size: 14px; margin-top: 10px;">
+          Your rider will contact you shortly to coordinate the pickup.
+        </p>
+      `;
+      
+      // Auto-hide the alert after 10 seconds
+      setTimeout(() => {
+        notificationAlert.style.display = 'none';
+      }, 10000);
+    }
+
+    function playNotificationSound() {
+      // Create a simple notification sound using Web Audio API
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (error) {
+        console.log('Could not play notification sound:', error);
+      }
+    }
+
+    function showBrowserNotification(order) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const notification = new Notification('Rider Assigned! 🚴‍♂️', {
+          body: `${order["Rider Name"]} has accepted your food pickup order. They will contact you shortly.`,
+          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚴‍♂️</text></svg>',
+          tag: 'rider-assigned'
+        });
+        
+        // Auto-close notification after 5 seconds
+        setTimeout(() => {
+          notification.close();
+        }, 5000);
+      }
+    }
+
+    function resetForm() {
+      form.style.display = 'block';
+      statusSection.style.display = 'none';
+      notificationAlert.style.display = 'none';
+      orderActions.style.display = 'none';
+      completedMessage.style.display = 'none';
+      form.reset();
+      currentOrderId = null;
+      riderAssigned = false;
+      orderCompleted = false;
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+      loadMyOrders(); // Refresh orders list
+    }
+
+    // Auto-refresh my orders every 30 seconds
+    setInterval(loadMyOrders, 30000);
+  </script>
+</body>
+</html>
+
