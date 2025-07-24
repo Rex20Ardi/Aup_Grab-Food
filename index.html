@@ -444,7 +444,9 @@
       <div id="responseMsg"></div>
       <div id="orderIdDisplay"></div>
       
-      <div class="page-exit-warning">
+
+      
+      <div class="page-exit-warning" id="pageExitWarning">
         <strong>Important:</strong> Please do not close or refresh this page until your order is completed. 
         You will lose track of your order status if you leave this page.
       </div>
@@ -1014,6 +1016,7 @@
       orderActions.style.display = 'none';
       notificationAlert.style.display = 'none';
       document.getElementById('refreshBtn').style.display = 'none';
+      document.getElementById('pageExitWarning').style.display = 'none';
       
       // Show completion message
       completedMessage.style.display = 'block';
