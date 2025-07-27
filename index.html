@@ -308,6 +308,42 @@
       color: #666;
       margin-top: 5px;
     }
+    /* NEW: Quantity field styling */
+    .quantity-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .quantity-input {
+      width: 80px !important;
+      text-align: center;
+    }
+    .quantity-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .quantity-btn {
+      width: 30px;
+      height: 25px;
+      padding: 0;
+      font-size: 14px;
+      font-weight: bold;
+      background: #4a7c59;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .quantity-btn:hover {
+      background: #2d5016;
+      transform: none;
+    }
+    .quantity-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
     @keyframes slideIn {
       from {
         opacity: 0;
@@ -393,6 +429,23 @@
         <label for="item">What to Pick Up *</label>
         <input type="text" id="item" placeholder="Food/items to be picked up" required />
         <div class="error-message" id="itemError">Please specify what to pick up</div>
+      </div>
+      
+      <!-- NEW: Quantity field -->
+      <div class="form-group">
+        <label for="quantity">Quantity *</label>
+        <div class="quantity-group">
+          <input type="number" id="quantity" class="quantity-input" value="1" min="1" max="99" required />
+          <div class="quantity-controls">
+            <button type="button" class="quantity-btn" onclick="adjustQuantity(1)">+</button>
+            <button type="button" class="quantity-btn" onclick="adjustQuantity(-1)">-</button>
+          </div>
+          <span style="font-size: 14px; color: #666;">items</span>
+        </div>
+        <div style="font-size: 12px; color: #666; margin-top: 5px;">
+          How many items/orders to pick up
+        </div>
+        <div class="error-message" id="quantityError">Please enter a valid quantity</div>
       </div>
       
       <div class="form-group">
@@ -492,7 +545,7 @@
   </div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwvYKrPpTzXX15LFnQHfis4wdbUGuoLiZOW4FeRiihHNGfWGxrLVPKaUoggwKwG4PEOIg/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxpVUrbU4GuIZAJrE8qAaZ0VsK5zQf0EQ8OoWqXbs4r5zOBNTFL9nwRfht1qtRM1UAuZw/exec';
     const form = document.getElementById('bookingForm');
     const responseMsg = document.getElementById('responseMsg');
     const riderInfo = document.getElementById('riderInfo');
@@ -512,6 +565,37 @@
     let orderCompleted = false;
     let userSessionId = null;
     let hasPendingOrder = false;
+
+    // NEW: Quantity adjustment function
+    function adjustQuantity(change) {
+      const quantityInput = document.getElementById('quantity');
+      let currentValue = parseInt(quantityInput.value) || 1;
+      let newValue = currentValue + change;
+      
+      if (newValue < 1) newValue = 1;
+      if (newValue > 99) newValue = 99;
+      
+      quantityInput.value = newValue;
+      validateQuantity();
+    }
+
+    // NEW: Quantity validation function
+    function validateQuantity() {
+      const quantityInput = document.getElementById('quantity');
+      const quantityError = document.getElementById('quantityError');
+      const value = parseInt(quantityInput.value);
+      
+      if (!value || value < 1 || value > 99) {
+        quantityInput.classList.add('input-error');
+        quantityError.style.display = 'block';
+        quantityError.textContent = 'Quantity must be between 1 and 99';
+        return false;
+      } else {
+        quantityInput.classList.remove('input-error');
+        quantityError.style.display = 'none';
+        return true;
+      }
+    }
 
     // Initialize user session
     window.onload = function() {
@@ -553,36 +637,38 @@
       document.getElementById('phone').addEventListener('input', validatePhone);
       document.getElementById('phone').addEventListener('blur', validatePhone);
       
+      // NEW: Quantity validation
+      document.getElementById('quantity').addEventListener('input', validateQuantity);
+      document.getElementById('quantity').addEventListener('blur', validateQuantity);
+      
       // Payment status change handler
       document.getElementById('paymentStatus').addEventListener('change', handlePaymentStatusChange);
       
       // Real-time validation for all required fields
       ['customer', 'pickup', 'item', 'dropoff'].forEach(fieldId => {
-        document.getElementById(fieldId).addEventListener('blur', () => validateField(fieldId));
+        const field = document.getElementById(fieldId);
+        field.addEventListener('input', () => validateField(fieldId));
+        field.addEventListener('blur', () => validateField(fieldId));
       });
     }
 
     function validatePhone() {
       const phoneInput = document.getElementById('phone');
       const phoneError = document.getElementById('phoneError');
-      const phone = phoneInput.value.trim();
+      const phoneValue = phoneInput.value.trim();
       
-      // Phone number patterns
-      const patterns = [
-        /^\+\d{1,3}-\d{3}-\d{3}-\d{4}$/, // +1-555-123-4567
-        /^\(\d{3}\)\s\d{3}-\d{4}$/, // (555) 123-4567
-        /^\d{3}-\d{3}-\d{4}$/, // 555-123-4567
-        /^09\d{9}$/, // 09123456789 (Philippines format)
-        /^\+63\d{10}$/, // +639123456789 (Philippines international)
-        /^\d{10,11}$/ // General 10-11 digit numbers
-      ];
+      // Basic phone validation (adjust pattern as needed)
+      const phonePattern = /^[0-9+\-\s()]+$/;
       
-      const isValid = patterns.some(pattern => pattern.test(phone));
-      
-      if (phone && !isValid) {
+      if (!phoneValue) {
         phoneInput.classList.add('input-error');
         phoneError.style.display = 'block';
-        phoneError.textContent = 'Please enter a valid phone number format';
+        phoneError.textContent = 'Phone number is required';
+        return false;
+      } else if (phoneValue.length < 10 || !phonePattern.test(phoneValue)) {
+        phoneInput.classList.add('input-error');
+        phoneError.style.display = 'block';
+        phoneError.textContent = 'Please enter a valid phone number';
         return false;
       } else {
         phoneInput.classList.remove('input-error');
@@ -609,6 +695,12 @@
     function handlePaymentStatusChange() {
       const paymentStatus = document.getElementById('paymentStatus').value;
       const paymentCostGroup = document.getElementById('paymentCostGroup');
+      const paymentError = document.getElementById('paymentError');
+      
+      if (paymentStatus) {
+        document.getElementById('paymentStatus').classList.remove('input-error');
+        paymentError.style.display = 'none';
+      }
       
       if (paymentStatus === 'Not Yet Paid') {
         paymentCostGroup.classList.add('show');
@@ -616,7 +708,8 @@
       } else {
         paymentCostGroup.classList.remove('show');
         document.getElementById('paymentCost').required = false;
-        document.getElementById('paymentCost').value = '';
+        document.getElementById('paymentCost').classList.remove('input-error');
+        document.getElementById('paymentCostError').style.display = 'none';
       }
     }
 
@@ -624,33 +717,32 @@
       let isValid = true;
       
       // Validate all required fields
-      ['customer', 'phone', 'pickup', 'item', 'dropoff'].forEach(fieldId => {
-        if (!validateField(fieldId)) {
-          isValid = false;
+      const requiredFields = ['customer', 'phone', 'pickup', 'item', 'quantity', 'dropoff', 'paymentStatus'];
+      
+      requiredFields.forEach(fieldId => {
+        if (fieldId === 'phone') {
+          if (!validatePhone()) isValid = false;
+        } else if (fieldId === 'quantity') {
+          if (!validateQuantity()) isValid = false;
+        } else if (fieldId === 'paymentStatus') {
+          const field = document.getElementById(fieldId);
+          const errorElement = document.getElementById(fieldId.replace('Status', 'Error'));
+          if (!field.value) {
+            field.classList.add('input-error');
+            errorElement.style.display = 'block';
+            isValid = false;
+          }
+        } else {
+          if (!validateField(fieldId)) isValid = false;
         }
       });
       
-      // Validate phone format
-      if (!validatePhone()) {
-        isValid = false;
-      }
-      
-      // Validate payment status
-      const paymentStatus = document.getElementById('paymentStatus');
-      const paymentError = document.getElementById('paymentError');
-      if (!paymentStatus.value) {
-        paymentStatus.classList.add('input-error');
-        paymentError.style.display = 'block';
-        isValid = false;
-      } else {
-        paymentStatus.classList.remove('input-error');
-        paymentError.style.display = 'none';
-      }
-      
       // Validate payment cost if required
-      if (paymentStatus.value === 'Not Yet Paid') {
+      const paymentStatus = document.getElementById('paymentStatus').value;
+      if (paymentStatus === 'Not Yet Paid') {
         const paymentCost = document.getElementById('paymentCost');
         const paymentCostError = document.getElementById('paymentCostError');
+        
         if (!paymentCost.value || parseFloat(paymentCost.value) <= 0) {
           paymentCost.classList.add('input-error');
           paymentCostError.style.display = 'block';
@@ -668,113 +760,87 @@
       window.addEventListener('beforeunload', function(e) {
         if (currentOrderId && !orderCompleted) {
           e.preventDefault();
-          e.returnValue = 'You have a pending order. Are you sure you want to leave this page?';
+          e.returnValue = 'You have an active order. Are you sure you want to leave?';
           return e.returnValue;
         }
       });
     }
 
-    function checkForPendingOrders() {
-      // Check if user has any pending orders
-      fetch(scriptURL + '?userSessionId=' + userSessionId)
-        .then(response => response.json())
-        .then(orders => {
-          const pendingOrders = orders.filter(order => 
-            order["Status"] !== "Completed" && 
-            order["User Session ID"] === userSessionId
-          );
-          
-          hasPendingOrder = pendingOrders.length > 0;
-          
-          if (hasPendingOrder) {
-            orderRestrictionNotice.style.display = 'block';
-            form.classList.add('form-disabled');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Complete Current Order First';
-          } else {
-            orderRestrictionNotice.style.display = 'none';
-            form.classList.remove('form-disabled');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit Booking';
-          }
-        })
-        .catch(error => {
-          console.error('Error checking pending orders:', error);
-        });
-    }
-
-    form.addEventListener('submit', e => {
+    form.addEventListener('submit', async function(e) {
       e.preventDefault();
-      if (validateForm() && !hasPendingOrder) {
-        submitOrder();
+      
+      if (!validateForm()) {
+        return;
+      }
+      
+      if (hasPendingOrder) {
+        alert('You have a pending order. Please complete or confirm receipt of your current order before placing a new one.');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+      
+      const orderId = generateOrderId();
+      currentOrderId = orderId;
+      
+      const formData = {
+        action: 'submitOrder',
+        orderId: orderId,
+        userSessionId: userSessionId,
+        customer: document.getElementById('customer').value,
+        phone: document.getElementById('phone').value,
+        pickup: document.getElementById('pickup').value,
+        item: document.getElementById('item').value,
+        quantity: document.getElementById('quantity').value, // NEW: Include quantity
+        dropoff: document.getElementById('dropoff').value,
+        paymentStatus: document.getElementById('paymentStatus').value,
+        paymentCost: document.getElementById('paymentCost').value,
+        notes: document.getElementById('notes').value,
+        timestamp: new Date().toISOString()
+      };
+      
+      try {
+        const response = await fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify(formData),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.result === 'success') {
+          form.style.display = 'none';
+          statusSection.style.display = 'block';
+          
+          responseMsg.innerHTML = '<div class="success-message">Order submitted successfully!</div>';
+          orderIdDisplay.innerHTML = `<div class="order-id">Order ID: ${orderId}</div>`;
+          
+          hasPendingOrder = true;
+          orderRestrictionNotice.style.display = 'block';
+          
+          startRiderCheck();
+          loadMyOrders();
+        } else {
+          throw new Error(result.message || 'Submission failed');
+        }
+      } catch (error) {
+        responseMsg.innerHTML = `<div class="warning-message">Error: ${error.message}</div>`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Booking';
       }
     });
 
-    // Generate unique order ID
     function generateOrderId() {
       const timestamp = Date.now();
       const random = Math.floor(Math.random() * 1000);
       return `ORD-${timestamp}-${random}`;
     }
 
-    async function submitOrder() {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitting...';
-
-      // Generate unique order ID
-      currentOrderId = generateOrderId();
-
-      const data = {
-        action: 'submitOrder',
-        orderId: currentOrderId,
-        userSessionId: userSessionId,
-        customer: document.getElementById('customer').value,
-        phone: document.getElementById('phone').value,
-        pickup: document.getElementById('pickup').value,
-        item: document.getElementById('item').value,
-        dropoff: document.getElementById('dropoff').value,
-        paymentStatus: document.getElementById('paymentStatus').value,
-        paymentCost: document.getElementById('paymentCost').value || null,
-        notes: document.getElementById('notes').value,
-        timestamp: new Date().toISOString()
-      };
-
-      try {
-        const response = await fetch(scriptURL, {
-          method: 'POST',
-          body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        responseMsg.innerHTML = '<div class="success-message">Booking submitted successfully!</div>';
-        
-        // Display the order ID prominently
-        orderIdDisplay.innerHTML = `<div class="order-id">Order ID: ${currentOrderId}</div>`;
-        
-        statusSection.style.display = 'block';
-        form.style.display = 'none';
-        
-        // Start checking for rider assignment
-        startRiderCheck();
-        
-        // Refresh my orders list
-        loadMyOrders();
-        
-      } catch (error) {
-        responseMsg.innerHTML = '<div style="color: red;">Something went wrong. Please try again.</div>';
-        console.error('Error!', error.message);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Booking';
-      }
-    }
-
     function startRiderCheck() {
-      // Check immediately
       checkRiderStatus();
-      
-      // Then check every 5 seconds for faster updates
       checkInterval = setInterval(checkRiderStatus, 5000);
     }
 
@@ -782,331 +848,228 @@
       if (!currentOrderId || orderCompleted) return;
       
       try {
-        const response = await fetch(scriptURL + '?orderId=' + currentOrderId + '&userSessionId=' + userSessionId);
-        const data = await response.json();
-        
-        // Find the order with our specific order ID
-        const myOrder = data.find(order => order["Order ID"] === currentOrderId);
-        
-        if (myOrder) {
-          if (myOrder["Status"] === "Completed" && !orderCompleted) {
-            // Order has been completed
-            orderCompleted = true;
-            clearInterval(checkInterval);
-            showOrderCompleted();
-            loadMyOrders(); // Refresh orders list
-          } else if (myOrder["Rider Name"] && !riderAssigned) {
-            // Rider has been assigned for the first time!
-            riderAssigned = true;
-            
-            // Show immediate notification alert
-            showRiderAssignedAlert(myOrder);
-            
-            // Play notification sound if enabled
-            if (document.getElementById('enableSound').checked) {
-              playNotificationSound();
-            }
-            
-            // Show browser notification if enabled
-            if (document.getElementById('enableBrowserNotification').checked) {
-              showBrowserNotification(myOrder);
-            }
-            
-            // Update the UI
-            riderStatus.style.display = 'none';
-            riderInfo.style.display = 'block';
-            riderInfo.innerHTML = `
-              <div class="rider-info">
-                <h3>Rider Assigned!</h3>
-                <div class="rider-details">
-                  <strong>Name:</strong> ${myOrder["Rider Name"]}
-                </div>
-                <div class="rider-details">
-                  <strong>Phone:</strong> ${myOrder["Rider Phone"] || 'Not provided'}
-                </div>
-                <div style="margin-top: 15px; font-size: 14px; opacity: 0.9;">
-                  Your rider will contact you shortly for pickup coordination.
-                </div>
-              </div>
-            `;
-            
-            // Show the confirm receipt button
-            orderActions.style.display = 'block';
-            
-            // Hide the refresh button since rider is assigned
-            document.getElementById('refreshBtn').style.display = 'none';
-            
-            // Refresh orders list
-            loadMyOrders();
-            
-          } else if (!myOrder["Rider Name"]) {
-            // Still waiting for rider
-            riderStatus.innerHTML = '<span class="status-indicator status-waiting"></span>Waiting for rider assignment...';
-            riderInfo.style.display = 'none';
-          }
-        }
-        
-      } catch (error) {
-        console.error('Error checking rider status:', error);
-        riderStatus.innerHTML = 'Unable to check rider status. Please refresh manually.';
-      }
-    }
-
-    async function loadMyOrders() {
-      try {
-        const response = await fetch(scriptURL + '?userSessionId=' + userSessionId);
+        const response = await fetch(`${scriptURL}?orderId=${currentOrderId}&userSessionId=${userSessionId}`);
         const orders = await response.json();
         
-        const myOrdersList = document.getElementById('myOrdersList');
-        
-        if (orders.length === 0) {
-          myOrdersList.innerHTML = `
-            <div style="text-align: center; color: #666; font-style: italic;">
-              No orders yet. Place your first order above!
-            </div>
-          `;
-          return;
-        }
-        
-        myOrdersList.innerHTML = '';
-        
-        orders.forEach(order => {
-          const orderCard = document.createElement('div');
-          orderCard.className = `order-card ${getOrderStatusClass(order)}`;
+        if (orders.length > 0) {
+          const order = orders[0];
           
-          // Fix undefined values by providing fallbacks
-          const orderId = order["Order ID"] || 'N/A';
-          const pickup = order["Pickup"] || order["Pickup Location"] || 'Not specified';
-          const dropoff = order["Dropoff"] || order["Dropoff Location"] || 'Not specified';
-          const item = order["Item"] || 'Not specified';
-          const riderName = order["Rider Name"] || 'Unassigned';
-          const riderPhone = order["Rider Phone"] || 'No phone';
-          const paymentStatus = order["Payment Status"] || 'Not specified';
-          const paymentCost = order["Payment Cost"] || '';
-          
-          orderCard.innerHTML = `
-            <div class="order-header">
-              <span class="order-id-small">${orderId}</span>
-              <span class="order-status ${getStatusClass(order)}">${getStatusText(order)}</span>
-            </div>
-            <div class="order-details">
-              <strong>From:</strong> ${pickup} → <strong>To:</strong> ${dropoff}<br>
-              <strong>Item:</strong> ${item}<br>
-              ${riderName !== 'Unassigned' ? `<strong>Rider:</strong> ${riderName} (${riderPhone})<br>` : ''}
-              <strong>Payment:</strong> ${paymentStatus}${paymentCost ? ` - ₱${paymentCost}` : ''}
-            </div>
-            ${getOrderActions(order)}
-          `;
-          
-          myOrdersList.appendChild(orderCard);
-        });
-        
-        // Check for pending orders to restrict new bookings
-        checkForPendingOrders();
-        
-      } catch (error) {
-        console.error('Error loading my orders:', error);
-        document.getElementById('myOrdersList').innerHTML = `
-          <div style="color: red; text-align: center;">
-            Error loading orders. Please try again.
-          </div>
-        `;
-      }
-    }
-
-    function getOrderStatusClass(order) {
-      if (order["Status"] === "Completed") return "completed";
-      if (order["Rider Name"]) return "assigned";
-      return "pending";
-    }
-
-    function getStatusClass(order) {
-      if (order["Status"] === "Completed") return "status-completed";
-      if (order["Rider Name"]) return "status-assigned";
-      return "status-pending";
-    }
-
-    function getStatusText(order) {
-      if (order["Status"] === "Completed") return "Completed";
-      if (order["Rider Name"]) return "Assigned";
-      return "Pending";
-    }
-
-    function getOrderActions(order) {
-      if (order["Status"] === "Completed") {
-        return '<div class="order-actions"><span style="color: #4a7c59; font-weight: bold;">Order completed!</span></div>';
-      } else if (order["Rider Name"]) {
-        return `
-          <div class="order-actions">
-            <button onclick="confirmOrderReceipt('${order["Order ID"]}')" style="background: linear-gradient(135deg, #4a7c59, #2d5016);">
-              Confirm Received
-            </button>
-          </div>
-        `;
-      } else {
-        return '<div class="order-actions"><span style="color: #ffc107; font-weight: bold;">Waiting for rider...</span></div>';
-      }
-    }
-
-    async function confirmOrderReceipt(orderId) {
-      if (confirm('Confirm that you have received this order?')) {
-        try {
-          const response = await fetch(scriptURL, {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'confirmReceipt',
-              orderId: orderId,
-              userSessionId: userSessionId
-            })
-          });
-          
-          const result = await response.json();
-          
-          if (result.result === 'success') {
-            loadMyOrders(); // Refresh the orders list
-            if (orderId === currentOrderId) {
-              orderCompleted = true;
-              clearInterval(checkInterval);
-              showOrderCompleted();
-            }
-          } else {
-            alert('Failed to confirm receipt. Please try again.');
+          if (order['Rider Name'] && !riderAssigned) {
+            riderAssigned = true;
+            showRiderAssigned(order);
+            showNotificationAlert();
+            playNotificationSound();
+            showBrowserNotification(order);
           }
-        } catch (error) {
-          console.error('Error confirming receipt:', error);
-          alert('Network error. Please try again.');
-        }
-      }
-    }
-
-    async function confirmReceipt() {
-      if (!currentOrderId) return;
-      
-      if (confirm('Confirm that you have received your order?')) {
-        try {
-          const response = await fetch(scriptURL, {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'confirmReceipt',
-              orderId: currentOrderId,
-              userSessionId: userSessionId
-            })
-          });
           
-          const result = await response.json();
-          
-          if (result.result === 'success') {
+          if (order['Status'] === 'Completed') {
             orderCompleted = true;
-            clearInterval(checkInterval);
             showOrderCompleted();
+            clearInterval(checkInterval);
+            hasPendingOrder = false;
+            orderRestrictionNotice.style.display = 'none';
             loadMyOrders();
-          } else {
-            alert('Failed to confirm receipt. Please try again.');
           }
-        } catch (error) {
-          console.error('Error confirming receipt:', error);
-          alert('Network error. Please try again.');
         }
+      } catch (error) {
+        console.error('Error checking rider status:', error);
       }
     }
 
-    function showOrderCompleted() {
-      // Hide other elements
-      riderInfo.style.display = 'none';
-      orderActions.style.display = 'none';
-      notificationAlert.style.display = 'none';
-      document.getElementById('refreshBtn').style.display = 'none';
-      document.getElementById('pageExitWarning').style.display = 'none';
+    function showRiderAssigned(order) {
+      riderStatus.style.display = 'none';
       
-      // Show completion message
-      completedMessage.style.display = 'block';
-      completedMessage.innerHTML = `
-        <div class="completed-message">
-          <h3>Order Completed!</h3>
-          <p>Thank you for using our food pickup service!</p>
-          <p>Order ID: <strong>${currentOrderId}</strong></p>
-          <p style="font-size: 14px; margin-top: 10px; opacity: 0.9;">
-            We hope you enjoyed your meal!
-          </p>
+      riderInfo.innerHTML = `
+        <div class="rider-info">
+          <h3>🚴 Rider Assigned!</h3>
+          <div class="rider-details">
+            <strong>Rider:</strong> ${order['Rider Name']}<br>
+            <strong>Phone:</strong> ${order['Rider Phone']}<br>
+            <strong>Status:</strong> On the way to pickup
+          </div>
         </div>
       `;
+      riderInfo.style.display = 'block';
+      
+      orderActions.style.display = 'block';
     }
 
-    function showRiderAssignedAlert(order) {
-      notificationAlert.style.display = 'block';
-      notificationAlert.className = 'notification-alert';
+    function showNotificationAlert() {
       notificationAlert.innerHTML = `
-        <h3>Great News!</h3>
-        <p><strong>${order["Rider Name"]}</strong> has accepted your order!</p>
-        <p>Phone: <strong>${order["Rider Phone"] || 'Will contact you soon'}</strong></p>
-        <p style="font-size: 14px; margin-top: 10px;">
-          Your rider will contact you shortly to coordinate the pickup.
-        </p>
+        <div class="notification-alert">
+          <h3>🎉 Great News!</h3>
+          <p>A rider has been assigned to your order and is on the way!</p>
+        </div>
       `;
+      notificationAlert.style.display = 'block';
       
-      // Auto-hide the alert after 10 seconds
       setTimeout(() => {
         notificationAlert.style.display = 'none';
       }, 10000);
     }
 
     function playNotificationSound() {
-      // Create a simple notification sound using Web Audio API
-      try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
-      } catch (error) {
-        console.log('Could not play notification sound:', error);
+      if (document.getElementById('enableSound').checked) {
+        try {
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+          audio.play().catch(e => console.log('Audio play failed:', e));
+        } catch (e) {
+          console.log('Audio creation failed:', e);
+        }
       }
     }
 
     function showBrowserNotification(order) {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification('Rider Assigned!', {
-          body: `${order["Rider Name"]} has accepted your food pickup order. They will contact you shortly.`,
-          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚴‍♂️</text></svg>',
-          tag: 'rider-assigned'
+      if (document.getElementById('enableBrowserNotification').checked && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('Rider Assigned!', {
+          body: `${order['Rider Name']} is on the way to pick up your order.`,
+          icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjNGE3YzU5Ii8+Cjwvc3ZnPgo='
+        });
+      }
+    }
+
+    function showOrderCompleted() {
+      riderInfo.style.display = 'none';
+      orderActions.style.display = 'none';
+      
+      completedMessage.innerHTML = `
+        <div class="completed-message">
+          <h3>✅ Order Completed!</h3>
+          <p>Your order has been successfully delivered. Thank you for using our service!</p>
+        </div>
+      `;
+      completedMessage.style.display = 'block';
+    }
+
+    async function confirmReceipt() {
+      if (!currentOrderId) return;
+      
+      const confirmBtn = document.getElementById('confirmReceiptBtn');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Confirming...';
+      
+      try {
+        const response = await fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'confirmReceipt',
+            orderId: currentOrderId,
+            userSessionId: userSessionId
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
-        // Auto-close notification after 5 seconds
-        setTimeout(() => {
-          notification.close();
-        }, 5000);
+        const result = await response.json();
+        
+        if (result.result === 'success') {
+          orderCompleted = true;
+          showOrderCompleted();
+          clearInterval(checkInterval);
+          hasPendingOrder = false;
+          orderRestrictionNotice.style.display = 'none';
+          loadMyOrders();
+        } else {
+          throw new Error(result.message || 'Failed to confirm receipt');
+        }
+      } catch (error) {
+        alert('Error confirming receipt: ' + error.message);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm Order Received';
+      }
+    }
+
+    async function loadMyOrders() {
+      try {
+        const response = await fetch(`${scriptURL}?userSessionId=${userSessionId}`);
+        const orders = await response.json();
+        
+        const myOrdersList = document.getElementById('myOrdersList');
+        
+        if (orders.length === 0) {
+          myOrdersList.innerHTML = '<div style="text-align: center; color: #666; font-style: italic;">No orders yet. Place your first order above!</div>';
+          return;
+        }
+        
+        // Check for pending orders
+        hasPendingOrder = orders.some(order => order['Status'] !== 'Completed');
+        
+        if (hasPendingOrder) {
+          orderRestrictionNotice.style.display = 'block';
+        } else {
+          orderRestrictionNotice.style.display = 'none';
+        }
+        
+        let ordersHTML = '';
+        orders.reverse().forEach(order => {
+          const status = order['Status'] || 'Pending';
+          const riderName = order['Rider Name'] || '';
+          
+          let statusClass = 'pending';
+          let statusText = 'Waiting for rider';
+          
+          if (status === 'Completed') {
+            statusClass = 'completed';
+            statusText = 'Completed';
+          } else if (riderName) {
+            statusClass = 'assigned';
+            statusText = 'Rider assigned';
+          }
+          
+          ordersHTML += `
+            <div class="order-card ${statusClass}">
+              <div class="order-header">
+                <span class="order-id-small">${order['Order ID']}</span>
+                <span class="order-status status-${statusClass}">${statusText}</span>
+              </div>
+              <div class="order-details">
+                <strong>Item:</strong> ${order['Item']} ${order['Quantity'] ? `(Qty: ${order['Quantity']})` : ''}<br>
+                <strong>From:</strong> ${order['Pickup']}<br>
+                <strong>To:</strong> ${order['Dropoff']}<br>
+                ${riderName ? `<strong>Rider:</strong> ${riderName}<br>` : ''}
+                <strong>Payment:</strong> ${order['Payment Status']}
+                ${order['Payment Cost'] ? ` - ₱${order['Payment Cost']}` : ''}
+              </div>
+            </div>
+          `;
+        });
+        
+        myOrdersList.innerHTML = ordersHTML;
+      } catch (error) {
+        console.error('Error loading orders:', error);
       }
     }
 
     function resetForm() {
-      form.style.display = 'block';
-      statusSection.style.display = 'none';
-      notificationAlert.style.display = 'none';
-      orderActions.style.display = 'none';
-      completedMessage.style.display = 'none';
-      form.reset();
+      if (currentOrderId && !orderCompleted) {
+        if (!confirm('Are you sure you want to place a new order? This will abandon your current order tracking.')) {
+          return;
+        }
+      }
+      
+      clearInterval(checkInterval);
       currentOrderId = null;
       riderAssigned = false;
       orderCompleted = false;
-      if (checkInterval) {
-        clearInterval(checkInterval);
-      }
-      loadMyOrders(); // Refresh orders list
+      
+      form.style.display = 'block';
+      statusSection.style.display = 'none';
+      
+      form.reset();
+      document.getElementById('quantity').value = '1'; // NEW: Reset quantity to 1
+      
+      // Clear all error states
+      document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+      document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+      
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Booking';
+      
+      paymentCostGroup.classList.remove('show');
+      
+      loadMyOrders();
     }
-
-    // Auto-refresh my orders every 30 seconds
-    setInterval(loadMyOrders, 30000);
   </script>
 </body>
 </html>
