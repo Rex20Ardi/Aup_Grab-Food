@@ -220,7 +220,7 @@
 
     function formatPhone(phone) {
         if (!phone) return '';
-        phone = phone.trim();
+        phone = String(phone).trim();
         // If starts with 0 and is 11 digits, convert to +63 format
         if (phone.startsWith('0') && phone.length === 11) {
             return '+63' + phone.slice(1);
@@ -242,7 +242,7 @@
     async function refresh() {
         const orders = await fetchAllOrders();
         allOrdersCache = orders;
-        document.getElementById('orders').innerHTML = renderTable(filterOrders(orders, currentTab));
+        document.getElementById('orders').innerHTML = renderTable(filterOrders(allOrdersCache, currentTab));
     }
 
     document.getElementById('tab-active').onclick = function() {
@@ -260,11 +260,11 @@
 
     window.markPrepared = async function(row) {
         await updateOrderStatus(row, 'prepared');
-        refresh();
+        await refresh();
     };
     window.markDelivered = async function(row) {
         await updateOrderStatus(row, 'delivered');
-        refresh();
+        await refresh();
     };
 
     setInterval(refresh, 4000);
