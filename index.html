@@ -46,12 +46,12 @@
             width: 100%;
             max-width: 900px;
             overflow-x: auto;
-            scrollbar-width: none; /* Firefox */
+            scrollbar-width: none;
             margin-left: 20px;
             margin-right: 20px;
         }
         #orders::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
+            display: none;
         }
         .info-box {
             background: #f4f8fb;
@@ -109,166 +109,144 @@
             background: linear-gradient(90deg, #00b4d8 0%, #0077b6 100%);
         }
         @media (max-width: 600px) {
-            h1 {
-                font-size: 1.3rem;
-                margin-top: 20px;
-                margin-bottom: 15px;
-            }
-            #orders {
-                max-width: 100vw;
-                margin-left: 10px;
-                margin-right: 10px;
-                padding: 0;
-            }
-            table, th, td, tbody, tr {
-                font-size: 1em;
-                padding: 0.5em 0.2em;
-                word-break: break-word;
-                white-space: normal;
-            }
-            .info-box {
-                font-size: 1em;
-                padding: 6px 7px;
-                margin-bottom: 6px;
-                word-break: break-word;
-                white-space: normal;
-            }
-            th, td {
-                word-break: break-word;
-                white-space: normal;
-            }
-            .status {
-                font-size: 0.95em;
-                padding: 0.2em 0.7em;
-            }
-            button {
-                font-size: 0.95em;
-                padding: 0.4em 0.7em;
-            }
+            h1 { font-size: 1.3rem; margin-top: 20px; margin-bottom: 15px; }
+            #orders { max-width: 100vw; margin-left: 10px; margin-right: 10px; padding: 0; }
+            table, th, td { font-size: 1em; padding: 0.5em 0.2em; white-space: normal; }
+            .info-box { font-size: 1em; padding: 6px 7px; margin-bottom: 6px; white-space: normal; }
+            .status { font-size: 0.95em; padding: 0.2em 0.7em; }
+            button { font-size: 0.95em; padding: 0.4em 0.7em; }
             .status.delivered {
-                writing-mode: vertical-rl;
-                text-orientation: mixed;
-                letter-spacing: 0.1em;
-                min-width: 1.2em;
-                text-align: center;
-                white-space: pre-line;
+                writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 0.1em;
+                min-width: 1.2em; text-align: center; white-space: pre-line;
             }
         }
     </style>
 </head>
 <body>
     <h1>All Orders Dashboard</h1>
-    <div id="order-tabs" style="margin-bottom:18px;">
-      <button id="tab-active" class="tab-btn active" style="margin-right:8px;">Active Orders</button>
-      <button id="tab-delivered" class="tab-btn">Delivered Orders</button>
+
+    <div id="order-tabs">
+        <button id="tab-active" class="tab-btn active">Active Orders</button>
+        <button id="tab-delivered" class="tab-btn">Delivered Orders</button>
     </div>
+
     <div id="orders"></div>
-    <script>
-    // Replace with your deployed Google Apps Script URL
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPVqo-Wi47_WOREfdRz2o8MOgO224r_0sKLV2TPHaemr3ve5GP_1rrInZ4nw47xPc/exec';
 
-    async function fetchAllOrders() {
-        const res = await fetch(APPS_SCRIPT_URL);
-        const data = await res.json();
-        return data.orders || [];
+<script>
+const APPS_SCRIPT_URL = 'YOUR_SCRIPT_URL';
+
+// *** NEW FUNCTION → formats order list into row formation ***
+function formatOrderList(orderText) {
+    if (!orderText) return '';
+    return orderText
+        .split(',')
+        .map(item => item.trim())
+        .filter(item => item.length > 0)
+        .join('<br>');
+}
+
+async function fetchAllOrders() {
+    const res = await fetch(APPS_SCRIPT_URL);
+    const data = await res.json();
+    return data.orders || [];
+}
+
+async function updateOrderStatus(row, status) {
+    const params = new URLSearchParams({ row, 'Order Status': status });
+    await fetch(APPS_SCRIPT_URL, { method: 'POST', body: params });
+}
+
+function statusBadge(status) {
+    if (!status) return '';
+    return `<span class="status ${status.toLowerCase()}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+}
+
+function renderTable(orders) {
+    if (!orders.length)
+        return '<div class="order"><div class="status pending">No orders yet.</div></div>';
+
+    let html = `<table><thead><tr>
+        <th>Date</th><th>Order Information</th><th>Status</th>
+    </tr></thead><tbody>`;
+
+    for (const order of orders) {
+        let dormDisplay = order.Dorm === 'Other Place'
+            ? (order.SpecificPlace || 'Other Place')
+            : (order.Dorm || '');
+
+        html += `<tr>
+            <td>${order.Date ? new Date(order.Date).toLocaleString() : ''}</td>
+            <td style="white-space:normal;">
+                <div class="info-box"><strong>Name:</strong> ${order.Name || ''}</div>
+                <div class="info-box"><strong>Dorm:</strong> ${dormDisplay}</div>
+                <div class="info-box"><strong>Phone:</strong> ${
+                    order.Phone
+                        ? `<a href="tel:${formatPhone(order.Phone)}">Call</a> | <a href="sms:${formatPhone(order.Phone)}">Text</a>`
+                        : ''
+                }</div>
+
+                <!-- UPDATED ORDER DISPLAY TO MULTI-ROW -->
+                <div class="info-box"><strong>Order:</strong><br>${formatOrderList(order.Order)}</div>
+
+                <div class="info-box"><strong>Order Notes:</strong> ${order['Order Notes'] || ''}</div>
+                <div class="info-box"><strong>Total:</strong> ${order.Total || ''}</div>
+                <div class="info-box"><strong>Mode of Payment:</strong> ${order['Mode of Payment'] || ''}</div>
+            </td>
+            <td style="text-align:center;">
+                ${statusBadge(order['Order Status'])}
+                ${(order['Order Status'] === 'prepared') ? `<br><button onclick="markDelivered(${order.row})">Item Delivered</button>` : ''}
+                ${(order['Order Status'] !== 'delivered' && order['Order Status'] !== 'prepared') ? `<br><button onclick="markPrepared(${order.row})">Item Prepared</button>` : ''}
+            </td>
+        </tr>`;
     }
 
-    async function updateOrderStatus(row, status) {
-        const params = new URLSearchParams({
-            row,
-            'Order Status': status
-        });
-        await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            body: params
-        });
-    }
+    html += '</tbody></table>';
+    return html;
+}
 
-    function statusBadge(status) {
-        if (!status) return '';
-        return `<span class="status ${status.toLowerCase()}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
-    }
+function formatPhone(phone) {
+    if (!phone) return '';
+    phone = String(phone).trim();
+    if (phone.startsWith('0') && phone.length === 11) return '+63' + phone.slice(1);
+    return phone;
+}
 
-    function renderTable(orders) {
-        if (!orders.length) return '<div class="order"><div class="status pending">No orders yet.</div></div>';
-        let html = `<table><thead><tr>
-            <th>Date</th><th>Order Information</th><th>Status</th>
-        </tr></thead><tbody>`;
-        for (const order of orders) {
-            let dormDisplay = order.Dorm === 'Other Place' ? (order.SpecificPlace || 'Other Place') : (order.Dorm || '');
-            html += `<tr>
-                <td>${order.Date ? new Date(order.Date).toLocaleString() : ''}</td>
-                <td style="white-space:normal;">
-                    <div class="info-box"><strong>Name:</strong> ${order.Name || ''}</div>
-                    <div class="info-box"><strong>Dorm:</strong> ${dormDisplay}</div>
-                    <div class="info-box"><strong>Phone:</strong> ${order.Phone ? `<a href="tel:${formatPhone(order.Phone)}" style="color:#0077b6;text-decoration:underline;">Call</a> | <a href="sms:${formatPhone(order.Phone)}" style="color:#0077b6;text-decoration:underline;">Text</a>` : ''}</div>
-                    <div class="info-box"><strong>Order:</strong> ${order.Order || ''}</div>
-                    <div class="info-box"><strong>Order Notes:</strong> ${order['Order Notes'] || ''}</div>
-                    <div class="info-box"><strong>Total:</strong> ${order.Total || ''}</div>
-                    <div class="info-box"><strong>Mode of Payment:</strong> ${order['Mode of Payment'] || ''}</div>
-                </td>
-                <td style="text-align:center;">
-                    ${statusBadge(order['Order Status'])}
-                    ${(order['Order Status'] === 'prepared') ? `<br><button onclick="markDelivered(${order.row})">Item Delivered</button>` : ''}
-                    ${(order['Order Status'] !== 'delivered' && order['Order Status'] !== 'prepared') ? `<br><button onclick="markPrepared(${order.row})">Item Prepared</button>` : ''}
-                </td>
-            </tr>`;
-        }
-        html += '</tbody></table>';
-        return html;
-    }
+let allOrdersCache = [];
+let currentTab = 'active';
 
-    function formatPhone(phone) {
-        if (!phone) return '';
-        phone = String(phone).trim();
-        // If starts with 0 and is 11 digits, convert to +63 format
-        if (phone.startsWith('0') && phone.length === 11) {
-            return '+63' + phone.slice(1);
-        }
-        return phone;
-    }
+function filterOrders(orders, tab) {
+    return tab === 'active'
+        ? orders.filter(o => String(o['Order Status']).toLowerCase() !== 'delivered')
+        : orders.filter(o => String(o['Order Status']).toLowerCase() === 'delivered');
+}
 
-    let allOrdersCache = [];
-    let currentTab = 'active';
+async function refresh() {
+    allOrdersCache = await fetchAllOrders();
+    document.getElementById('orders').innerHTML =
+        renderTable(filterOrders(allOrdersCache, currentTab));
+}
 
-    function filterOrders(orders, tab) {
-        if (tab === 'active') {
-            return orders.filter(order => String(order['Order Status']).toLowerCase() !== 'delivered');
-        } else {
-            return orders.filter(order => String(order['Order Status']).toLowerCase() === 'delivered');
-        }
-    }
+document.getElementById('tab-active').onclick = () => {
+    currentTab = 'active';
+    tabSwitch();
+};
+document.getElementById('tab-delivered').onclick = () => {
+    currentTab = 'delivered';
+    tabSwitch();
+};
 
-    async function refresh() {
-        const orders = await fetchAllOrders();
-        allOrdersCache = orders;
-        document.getElementById('orders').innerHTML = renderTable(filterOrders(allOrdersCache, currentTab));
-    }
+function tabSwitch() {
+    document.getElementById('tab-active').classList.toggle('active', currentTab === 'active');
+    document.getElementById('tab-delivered').classList.toggle('active', currentTab === 'delivered');
+    document.getElementById('orders').innerHTML = renderTable(filterOrders(allOrdersCache, currentTab));
+}
 
-    document.getElementById('tab-active').onclick = function() {
-        currentTab = 'active';
-        document.getElementById('tab-active').classList.add('active');
-        document.getElementById('tab-delivered').classList.remove('active');
-        document.getElementById('orders').innerHTML = renderTable(filterOrders(allOrdersCache, currentTab));
-    };
-    document.getElementById('tab-delivered').onclick = function() {
-        currentTab = 'delivered';
-        document.getElementById('tab-delivered').classList.add('active');
-        document.getElementById('tab-active').classList.remove('active');
-        document.getElementById('orders').innerHTML = renderTable(filterOrders(allOrdersCache, currentTab));
-    };
+window.markPrepared = async row => { await updateOrderStatus(row, 'prepared'); refresh(); };
+window.markDelivered = async row => { await updateOrderStatus(row, 'delivered'); refresh(); };
 
-    window.markPrepared = async function(row) {
-        await updateOrderStatus(row, 'prepared');
-        await refresh();
-    };
-    window.markDelivered = async function(row) {
-        await updateOrderStatus(row, 'delivered');
-        await refresh();
-    };
+setInterval(refresh, 4000);
+refresh();
+</script>
 
-    setInterval(refresh, 4000);
-    refresh();
-    </script>
 </body>
 </html>
